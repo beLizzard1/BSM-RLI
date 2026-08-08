@@ -1,10 +1,48 @@
-# BSM-RLI Comprehensive Empirical Experimental Report & Visual Benchmark Plots
+# BSM-RLI Empirical Experimental Report & Visual Benchmark Plots
 
 > **Multi-Metric Comparative Evaluation of Edge Language Models (Llama-3.2-1B-Instruct) Across Training Epochs, Generation Throughput, Context Window Compression, and Bare-Metal Host Interception Engine.**
 
 ---
 
-## 1. Master Empirical Multi-Metric Performance Matrix
+## 1. High-Resolution Visual Benchmark Charts
+
+### Benchmark Accuracy Comparison Across Tasks
+![Benchmark Accuracy Comparison](plots/accuracy_comparison.png)
+
+---
+
+### Context Window Token Consumption (tokens/sample)
+![Context Window Token Compression](plots/token_compression.png)
+
+---
+
+### Host C++ Micro-Kernel Latency Breakdown (Sub-Microseconds)
+![Host Micro-Kernel Execution Latencies](plots/kernel_latencies.png)
+
+---
+
+## 2. Interactive Mermaid.js System Charts
+
+### Execution Latency Regime Comparison
+```mermaid
+gantt
+    title BSM-RLI Micro-Kernel vs REST Cloud API Execution Latency Regime
+    dateFormat  X
+    axisFormat %s
+
+    section Cloud REST Tool API
+    REST Call Overhead (~500ms)      :active, 0, 500
+
+    section Base LLM Token Generation
+    126-token CoT Sampling (~1.37s) :crit, 0, 1370
+
+    section BSM-RLI Host C++ Engine
+    Sub-5µs C++ Execution (<0.005ms) :done, 0, 1
+```
+
+---
+
+## 3. Master Empirical Multi-Metric Performance Matrix
 
 | Evaluation Dimension / Metric | Pure Base Model (`Llama-3.2-1B-Instruct`) | SFT LoRA Adapter (60 steps) | BSM-RLI Host Interception Engine | Delta Improvement (BSM-RLI vs Pure Base) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -20,47 +58,7 @@
 
 ---
 
-## 2. Visual Performance Comparison Graphs & Bar Charts
-
-### Graph 1: Benchmark Accuracy Across Domains (%)
-```text
-GSM8K Math Accuracy:
-  Pure Base Model (1B)    [██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 32.0%
-  SFT LoRA (60 steps)     [████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 26.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-
-Strawberry Char-Eval Accuracy:
-  Pure Base Model (1B)    [██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.2%
-  SFT LoRA (60 steps)     [███████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 42.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-
-BIG-bench SAT Constraint Accuracy:
-  Pure Base Model (1B)    [███████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 41.5%
-  SFT LoRA (60 steps)     [███████████████████████▌░░░░░░░░░░░░░░░░░░░░░] 55.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-```
-
----
-
-### Graph 2: Context Window Token Output Length (tokens/sample) — *Lower is Better*
-```text
-Pure Base Model (1B)    [█████████████████████████████████████████████] 126.1 tokens
-SFT LoRA (60 steps)     [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.6 tokens
-BSM-RLI Host Engine     [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3.0 tokens
-```
-
----
-
-### Graph 3: Execution Latency Comparison (Logarithmic Scale) — *Lower is Better*
-```text
-Cloud REST Tool Call API [█████████████████████████████████████████████] ~500,000 µs (500 ms)
-Base LLM 126-token CoT   [█████████████████████████████████████████░░░░] ~1,378,000 µs (1.37 s)
-BSM-RLI Host C++ Engine  [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] < 5 µs (0.005 ms)
-```
-
----
-
-## 3. Empirical Latency Breakdown Across Micro-Kernel Primitives
+## 4. Empirical Latency Breakdown Across Micro-Kernel Primitives
 
 | Micro-Kernel Primitive Name | Operational Domain | p50 Latency (µs) | p95 Latency (µs) | p99 Latency (µs) | Speedup vs REST Tool Call (~500ms) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -72,11 +70,3 @@ BSM-RLI Host C++ Engine  [█░░░░░░░░░░░░░░░░░
 | `PRODUCT_F64` | SIMD Vector Math | **`4.356 µs`** | `4.510 µs` | `9.691 µs` | **114,700x faster** |
 | `SUM_F64` | SIMD Vector Math | **`5.929 µs`** | `6.875 µs` | `10.950 µs` | **84,300x faster** |
 | `STATS_SUMMARY` | Single-Pass Reduction | **`9.593 µs`** | `10.440 µs` | `19.387 µs` | **52,100x faster** |
-
----
-
-## 4. Key Experimental Takeaways
-
-1. **Elimination of Reasoning Drift**: Standard 1B models drift when calculating multi-step math (32% accuracy), whereas BSM-RLI host C++ execution guarantees **100.0% exact numerical match**.
-2. **Extreme Token Economy**: Compresses context window requirements from **126.1 tokens down to 3.0 tokens per query** (**42x reduction**), reducing KV-cache VRAM utilization by **97.7%**.
-3. **Sub-Microsecond Latency**: Offloads execution to host C++ primitives running in **`< 5 µs`**, delivering over **275,000x speedup** compared to autoregressive token generation.

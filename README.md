@@ -6,6 +6,23 @@ BSM-RLI is a high-performance C++20 engine and inference integration architectur
 
 ---
 
+## High-Resolution Visual Benchmark Charts
+
+### Benchmark Accuracy Comparison Across Tasks
+![Benchmark Accuracy Comparison](experiments/plots/accuracy_comparison.png)
+
+---
+
+### Context Window Token Consumption (tokens/sample)
+![Context Window Token Compression](experiments/plots/token_compression.png)
+
+---
+
+### Host C++ Micro-Kernel Latency Breakdown (Sub-Microseconds)
+![Host Micro-Kernel Execution Latencies](experiments/plots/kernel_latencies.png)
+
+---
+
 ## Master Empirical Multi-Metric Performance Matrix
 
 | Evaluation Dimension / Metric | Pure Base Model (`Llama-3.2-1B-Instruct`) | SFT LoRA Adapter (60 steps) | BSM-RLI Host Interception Engine | Delta Improvement (BSM-RLI vs Pure Base) |
@@ -19,35 +36,6 @@ BSM-RLI is a high-performance C++20 engine and inference integration architectur
 | **Generation Throughput (tokens/sec)** | `91.50 tok/s` (RTX 4070 Ti) | `43.37 tok/s` | **`N/A (Sub-5µs C++ Execution)`** | **Instantaneous Zero-IPC Dispatch** |
 | **Time-To-First-Token (TTFT)** | `12.40 ms` | `12.50 ms` | **`< 0.005 ms (< 5µs)`** | **2,480x TTFT Reduction** |
 | **KV-Cache Memory Footprint** | `100.0%` (126 tokens allocation) | `29.8%` (37 tokens allocation) | **`2.3%` (3 tokens allocation)** | **97.7% KV-Cache VRAM Savings** |
-
----
-
-## Visual Performance Comparison Graphs
-
-### Benchmark Accuracy Across Domains (%)
-```text
-GSM8K Math Accuracy:
-  Pure Base Model (1B)    [██████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 32.0%
-  SFT LoRA (60 steps)     [████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 26.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-
-Strawberry Char-Eval Accuracy:
-  Pure Base Model (1B)    [██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 14.2%
-  SFT LoRA (60 steps)     [███████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 42.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-
-BIG-bench SAT Constraint Accuracy:
-  Pure Base Model (1B)    [███████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░] 41.5%
-  SFT LoRA (60 steps)     [███████████████████████▌░░░░░░░░░░░░░░░░░░░░░] 55.0%
-  BSM-RLI Host Engine     [█████████████████████████████████████████████] 100.0%
-```
-
-### Context Window Output Length (tokens/sample) — *Lower is Better*
-```text
-Pure Base Model (1B)    [█████████████████████████████████████████████] 126.1 tokens
-SFT LoRA (60 steps)     [█████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.6 tokens
-BSM-RLI Host Engine     [█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 3.0 tokens
-```
 
 ---
 
