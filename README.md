@@ -25,8 +25,9 @@ Below are the exact, unedited live outputs generated on your **NVIDIA GeForce RT
 > **Instruction**: *"Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?"*  
 > **Ground Truth**: `18`
 
-```carousel
-### Stage 1: Pure Base Model (`Llama-3.2-1B-Instruct`)
+<details open>
+<summary><b>Stage 1: Pure Base Model (Llama-3.2-1B-Instruct)</b></summary>
+
 ```text
 ## Step 1: Calculate the number of eggs Janet eats and bakes each day.
 Janet eats 3 eggs for breakfast and bakes 4 muffins, so she eats and bakes a total of 3 + 4 = 7 eggs and muffins each day.
@@ -41,9 +42,13 @@ Jan...  <-- Token Budget Exhaustion / Truncated before final answer
 - **Tokens Generated**: **128 tokens**
 - **Evaluation Time**: **2.06 seconds**
 
-<!-- slide -->
+</details>
 
-### Stage 2: Fine-Tuned SFT LoRA Model (`models/bsm_rli_lora`)
+<br>
+
+<details open>
+<summary><b>Stage 2: Fine-Tuned SFT LoRA Model (models/bsm_rli_lora)</b></summary>
+
 ```text
 The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs sold per day is 48 - 3 = 45. The total amount of money made per day is 45 * 2 = 90.<|eot_id|>
 ```
@@ -51,9 +56,13 @@ The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs s
 - **Tokens Generated**: **55 tokens**
 - **Evaluation Time**: **1.01 seconds**
 
-<!-- slide -->
+</details>
 
-### Stage 3: BSM-RLI Engine (C++/CUDA Interception)
+<br>
+
+<details open>
+<summary><b>Stage 3: BSM-RLI Engine (C++/CUDA Interception)</b></summary>
+
 ```text
 <|jit_start|>EVAL_EXPR("(16 - 3 - 4) * 2")<|jit_end|>
 ```
@@ -61,7 +70,8 @@ The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs s
 - **Accuracy**: 🎯 **100.0% Exact Match Guarantee ($18)**
 - **Tokens Generated**: **3 tokens** (**18.3x Token Compression**)
 - **Execution Latency**: **`0.88 µs`** (**1,147,700x Speedup**)
-```
+
+</details>
 
 ---
 
