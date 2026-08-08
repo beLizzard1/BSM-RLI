@@ -28,7 +28,7 @@ def run_complete_full_datasets_sweep(batch_size=16):
     print("=================================================================")
 
     MODEL_NAME = "unsloth/Llama-3.2-1B-Instruct"
-    LORA_PATH = "models/bsm_rli_lora"
+    LORA_PATH = "models/bsm_rli_enhanced_lora"
 
     print(f"\n[Init] Loading Model: {MODEL_NAME} on CUDA...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, padding_side="left")
