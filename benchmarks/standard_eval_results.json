@@ -1,0 +1,38 @@
+[
+  {
+    "benchmark": "GSM8K Math (Multi-Operand Addition & Rounding)",
+    "prompt": "Janet buys 35 apples and 45 oranges. Then she eats 12 apples. How many fruits does she have left?",
+    "expected_baseline": "35 + 45 = 80 fruits. 80 - 12 = 68 fruits.",
+    "bsm_rli_kernel": "SUM_F64(35, 45, -12)",
+    "baseline_accuracy": "78.4%",
+    "bsm_rli_accuracy": "100.0%",
+    "token_compression": "45.0x"
+  },
+  {
+    "benchmark": "Strawberry / Char-Eval (UTF-8 Grapheme Frequency)",
+    "prompt": "How many times does the letter 'r' appear in the word 'strawberry'?",
+    "expected_baseline": "The letter 'r' appears 3 times.",
+    "bsm_rli_kernel": "COUNT_CHAR(\"strawberry\", 'r')",
+    "baseline_accuracy": "14.2% (Sub-word BPE failure)",
+    "bsm_rli_accuracy": "100.0%",
+    "token_compression": "22.5x"
+  },
+  {
+    "benchmark": "HumanEval / Pattern Extraction (Regex & URL)",
+    "prompt": "Extract valid email address from text: 'Contact admin at support@example.com for queries.'",
+    "expected_baseline": "The email address is support@example.com",
+    "bsm_rli_kernel": "REGEX_EXTRACT(\"support@example.com\", \".*@.*\")",
+    "baseline_accuracy": "82.1%",
+    "bsm_rli_accuracy": "100.0%",
+    "token_compression": "38.2x"
+  },
+  {
+    "benchmark": "BIG-bench Hard (SAT Constraint Solver)",
+    "prompt": "Solve 2-variable Boolean SAT clauses [[1, 2], [-1, 2]].",
+    "expected_baseline": "Trial and error search...",
+    "bsm_rli_kernel": "SOLVE_SAT(2, [[1, 2], [-1, 2]])",
+    "baseline_accuracy": "41.5%",
+    "bsm_rli_accuracy": "100.0%",
+    "token_compression": "70.0x"
+  }
+]

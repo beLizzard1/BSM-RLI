@@ -1,0 +1,66 @@
+[
+  {
+    "kernel": "SUM_F64 (1,000 floats)",
+    "samples": 1000,
+    "p50_us": 5.929,
+    "p95_us": 6.875,
+    "p99_us": 10.95,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "PRODUCT_F64 (100 floats)",
+    "samples": 1000,
+    "p50_us": 4.356,
+    "p95_us": 4.51,
+    "p99_us": 9.691,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "STATS_SUMMARY (500 floats)",
+    "samples": 1000,
+    "p50_us": 9.593,
+    "p95_us": 10.44,
+    "p99_us": 19.387,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "COUNT_CHAR (1KB text)",
+    "samples": 1000,
+    "p50_us": 0.055,
+    "p95_us": 0.077,
+    "p99_us": 0.088,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "REVERSE_STR (1KB text)",
+    "samples": 1000,
+    "p50_us": 0.572,
+    "p95_us": 0.594,
+    "p99_us": 0.695,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "REGEX_MATCH (DFA pattern)",
+    "samples": 1000,
+    "p50_us": 0.176,
+    "p95_us": 0.22,
+    "p99_us": 0.352,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "DATE_ADD (ISO-8601)",
+    "samples": 1000,
+    "p50_us": 0.484,
+    "p95_us": 0.528,
+    "p99_us": 0.572,
+    "status": "PASSED"
+  },
+  {
+    "kernel": "SORT_ARRAY (100 floats)",
+    "samples": 1000,
+    "p50_us": 0.517,
+    "p95_us": 0.539,
+    "p99_us": 0.561,
+    "status": "PASSED"
+  }
+]

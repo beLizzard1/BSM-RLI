@@ -1,0 +1,29 @@
+# Build & Binary Artifacts
+build/
+*.so
+*.o
+*.a
+bsm_rli_cli
+bsm_rli_llama_runner
+bsm_rli_tests
+
+# Models & Checkpoints
+models/
+*.bin
+*.pt
+*.safetensors
+*.gguf
+unsloth_compiled_cache/
+
+# Python & Environment
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+env/
+venv/
+
+# IDE & System Files
+.DS_Store
+.vscode/
+.idea/

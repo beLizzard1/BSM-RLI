@@ -1,0 +1,12 @@
+root        ::= "<|jit_start|>" kernel_call "<|jit_end|>"
+kernel_call ::= SUM_F64_call | COUNT_CHAR_call | MATH_EVAL_call | BITWISE_OP_call
+SUM_F64_call ::= "SUM_F64(" number_list ")"
+COUNT_CHAR_call ::= "COUNT_CHAR(" string_lit "," char_lit ")"
+MATH_EVAL_call ::= "MATH_EVAL_EXACT(" string_lit ")"
+BITWISE_OP_call ::= "BITWISE_OP(" int_lit "," string_lit "," int_lit ")"
+
+number_list ::= "[" number ("," number)* "]"
+number      ::= [0-9]+ ("." [0-9]+)?
+string_lit  ::= '"' [^"]* '"'
+char_lit    ::= "'" [^'] "'"
+int_lit     ::= [0-9]+
