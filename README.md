@@ -55,6 +55,11 @@ The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs s
 
 ## High-Resolution Visual Benchmark Charts
 
+### Multi-Model Sweep Comparison (Baseline vs CoT-Preserving Fine-Tuned Accuracy)
+![Multi-Model Sweep Comparison](experiments/plots/multi_model_sweep_comparison.png)
+
+---
+
 ### Benchmark Accuracy Comparison Across Tasks
 ![Benchmark Accuracy Comparison](experiments/plots/accuracy_comparison.png)
 
