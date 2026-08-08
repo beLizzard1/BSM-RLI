@@ -1,0 +1,14 @@
+{
+  "question": "Janet\u2019s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?",
+  "ground_truth": "Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day.\nShe makes 9 * 2 = $<<9*2=18>>18 every day at the farmer\u2019s market.\n#### 18",
+  "base_model": {
+    "output": "## Step 1: Calculate the number of eggs Janet eats and bakes each day.\nJanet eats 3 eggs for breakfast and bakes 4 muffins, so she eats and bakes a total of 3 + 4 = 7 eggs and muffins each day.\n\n## Step 2: Calculate the number of eggs Janet lays each day.\nSince Janet lays 16 eggs per day and eats and bakes 7 eggs and muffins, she lays 16 - 7 = 9 eggs per day.\n\n## Step 3: Calculate the number of eggs Janet sells at the farmers' market each day.\nJan",
+    "tokens": 128,
+    "time_sec": 2.0624
+  },
+  "sft_lora_model": {
+    "output": "The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs sold per day is 48 - 3 = 45. The total amount of money made per day is 45 * 2 = 90.<|eot_id|>",
+    "tokens": 55,
+    "time_sec": 1.0141
+  }
+}
