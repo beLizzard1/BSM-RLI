@@ -6,6 +6,18 @@ BSM-RLI is a high-performance C++20 engine and inference integration architectur
 
 ---
 
+## 📚 Documentation & Persona-Based Wiki Index
+
+Whether you are an **AI Researcher**, **Edge ML Systems Engineer**, or **Open-Source Developer**, dive directly into our comprehensive [GitHub Wiki](https://github.com/beLizzard1/BSM-RLI/wiki):
+
+| Reader Persona | Primary Focus & Target Goals | Recommended Wiki Deep-Dives |
+| :--- | :--- | :--- |
+| 🔬 **AI Researchers & ML Engineers** | CoT alignment paradox, response loss masking, SFT vs. RL, adaptive token budgets | 📖 [Benchmarks & Empirical Matrix](https://github.com/beLizzard1/BSM-RLI/wiki/Benchmarks)<br>📖 [SLM Limits & CoT Paradox](https://github.com/beLizzard1/BSM-RLI/wiki/SLM-Limits)<br>📖 [Training Curriculum & 75k Dataset](https://github.com/beLizzard1/BSM-RLI/wiki/Training-Curriculum) |
+| ⚡ **Edge Systems & C++/CUDA Engineers** | Bare-metal logit interception, sub-5µs C++ dispatch, AVX-512 vector kernels | 📖 [System Architecture & Token Interception](https://github.com/beLizzard1/BSM-RLI/wiki/Architecture)<br>📖 [CUDA & C++ Micro-Kernel Primitives](https://github.com/beLizzard1/BSM-RLI/wiki/CUDA-Micro-Kernels)<br>📖 [21-Model Catalog & VRAM Budgets](https://github.com/beLizzard1/BSM-RLI/wiki/Model-Catalog) |
+| 🚀 **Application Developers & Contributors** | Quick start setup, fine-tuning scripts, GGUF export, CMake build integration | 📖 [Getting Started & Build Guide](https://github.com/beLizzard1/BSM-RLI/wiki/Getting-Started)<br>📖 [Fine-Tuning & Unsloth QLoRA Guide](https://github.com/beLizzard1/BSM-RLI/wiki/Fine-Tuning-Guide)<br>📖 [Full Repository Codebase Structure](https://github.com/beLizzard1/BSM-RLI/wiki/Project-Structure) |
+
+---
+
 ## Live Empirical Output Progression (GSM8K Item #0)
 
 Below are the exact, unedited live outputs generated on your **NVIDIA GeForce RTX 4070 Ti** on **GSM8K Test Question #0**:
