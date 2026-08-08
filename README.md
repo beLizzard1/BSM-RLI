@@ -75,10 +75,36 @@ The total number of eggs laid per day is 16 * 3 = 48. The total number of eggs s
 
 ---
 
-## Empirical Benchmarks & SLM Performance Analysis
+## Empirical Benchmarks & The Transition to GRPO Reinforcement Learning
 
 > [!NOTE]
-> **Empirical Finding (The SFT Reasoning Collapse)**: When evaluated with sufficient token budgets (1,024–2,048 tokens), unadapted base thinking models (e.g. Qwen3-1.7B, DeepSeek-R1-1.5B) achieve **74%–94%** GSM8K accuracy via unconstrained Chain-of-Thought (CoT). Standard Supervised Fine-Tuning (SFT) forces template strings that restrict natural reasoning, dropping accuracy to **24%–46%**. CoT-Preserving SFT recovers performance up to 12x over naive SFT, but **Reinforcement Learning (GRPO)** is required to achieve 95%+ accuracy alongside sub-20 token micro-kernel offloading.
+> **Empirical Finding (The SFT Reasoning Collapse)**: When evaluated with sufficient token budgets (1,024–2,048 tokens), unadapted base thinking models (e.g. Qwen3-1.7B, DeepSeek-R1-1.5B) achieve **74%–94%** GSM8K accuracy via unconstrained Chain-of-Thought (CoT). Standard Supervised Fine-Tuning (SFT) forces synthetic template target strings that restrict the model's pre-trained cognitive graph, causing accuracy to collapse to **24%–46%**. 
+
+### 💡 Why BSM-RLI is Transitioning from SFT to GRPO (Group Relative Policy Optimization)
+
+To solve the SFT bottleneck, BSM-RLI adopts **GRPO Reinforcement Learning** (DeepSeek-R1 methodology):
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 WHY GRPO REINFORCEMENT LEARNING WINS OVER SFT               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  Supervised Fine-Tuning (SFT)               GRPO Reinforcement Learning (RL)
+  ────────────────────────────               ────────────────────────────────
+  • Forces fixed target text strings         • Sample G=8 candidate reasoning proposals
+  • Restricts model's internal thought       • Model proposes ITS OWN reasoning path
+  • Cross-entropy loss penalizes valid       • Host C++ micro-kernel evaluates bit-exact
+    alternative reasoning steps                correctness and rewards early offloading
+  • Capped at 24%–46% accuracy               • Target: 95%+ Accuracy + Sub-20 tokens
+```
+
+#### Multi-Objective GRPO Reward Function ($R_{\text{total}}$):
+- **$R_{\text{correctness}} (+1.0 / -1.0)$**: Bit-exact match from host C++/CUDA micro-kernel execution.
+- **$R_{\text{validity}} (+0.3 / -0.5)$**: Valid `<|jit_start|>` and `<|jit_end|>` trigger syntax.
+- **$R_{\text{kernel\_select}} (+0.5)$**: Prefers direct specialized micro-kernels (`SUM_F64`) over verbose C++ loops (`DYN_CPP`).
+- **$R_{\text{economy}} (+0.4 \times (1 - \frac{\text{length}}{1024}))$**: Incentivizes early micro-kernel offloading within `<think>`.
+
+---
 
 ### Multi-Model Sweep: Base CoT vs. CoT-Preserving SFT Accuracy
 ![Multi-Model Sweep Comparison](experiments/plots/multi_model_sweep_comparison.png)
