@@ -1,9 +1,10 @@
 """
 BSM-RLI Enhanced Curriculum Unsloth Fine-Tuning Pipeline
-Includes Anti-Overfitting Safeguards:
+Includes Anti-Overfitting & CoT-Preserving Safeguards:
 1. 20% Conversational Replay Buffer (prevents catastrophic forgetting)
 2. Low-Rank LoRA Regularization (r=16, alpha=16, weight_decay=0.01)
-3. Early Stopping & Loss Regularization
+3. Response-Only Completion Loss Masking (CoTCompletionDataCollator)
+4. Family-Aware Thinking-Trace Targets (<think>...</think>)
 """
 
 import os
@@ -13,9 +14,41 @@ from datasets import Dataset
 from unsloth import FastLanguageModel
 from trl import SFTTrainer, SFTConfig
 
+class CoTCompletionDataCollator:
+    """Masks input prompt tokens with -100 so loss gradients apply strictly to assistant responses."""
+    def __init__(self, tokenizer, response_template):
+        self.tokenizer = tokenizer
+        self.response_template_ids = tokenizer.encode(response_template, add_special_tokens=False)
+        self.pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+
+    def __call__(self, examples):
+        batch_input_ids = [torch.tensor(e["input_ids"]) if isinstance(e["input_ids"], list) else e["input_ids"] for e in examples]
+        padded = torch.nn.utils.rnn.pad_sequence(batch_input_ids, batch_first=True, padding_value=self.pad_token_id)
+        attention_mask = (padded != self.pad_token_id).long()
+        labels = padded.clone()
+
+        for i, ids in enumerate(batch_input_ids):
+            ids_list = ids.tolist()
+            match_idx = -1
+            for k in range(len(ids_list) - len(self.response_template_ids) + 1):
+                if ids_list[k:k + len(self.response_template_ids)] == self.response_template_ids:
+                    match_idx = k + len(self.response_template_ids)
+                    break
+            if match_idx != -1:
+                labels[i, :match_idx] = -100
+            else:
+                labels[i, :len(ids_list) // 2] = -100
+            labels[i, padded[i] == self.pad_token_id] = -100
+
+        return {
+            "input_ids": padded,
+            "attention_mask": attention_mask,
+            "labels": labels,
+        }
+
 def train_enhanced_curriculum():
     print("=================================================================")
-    print("  BSM-RLI ENHANCED CURRICULUM TRAINING (WITH ANTI-OVERFITTING)   ")
+    print("  BSM-RLI ENHANCED CURRICULUM TRAINING (WITH CoT LOSS MASKING)   ")
     print("  Hardware: NVIDIA GeForce RTX 4070 Ti (12GB VRAM)              ")
     print("=================================================================")
 
@@ -31,51 +64,51 @@ def train_enhanced_curriculum():
         dtype=torch.float16,
     )
 
-    # Register Special Tokens
     special_tokens = ["<|jit_start|>", "<|jit_end|>"]
     tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
     model.resize_token_embeddings(len(tokenizer))
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
-    # Anti-Overfitting Safeguard 1: Low-Rank Regularized LoRA Patching
     print("[2/4] Patching Low-Rank Regularized LoRA Adapters (r=16, alpha=16)...")
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         lora_alpha=16,
-        lora_dropout=0.0,  # Optimized Unsloth fast patching
+        lora_dropout=0.0,
         bias="none",
         use_gradient_checkpointing="unsloth",
     )
 
-    # Anti-Overfitting Safeguard 2: 20% Conversational Replay Buffer Loading
     print(f"[3/4] Loading 75,000 Curriculum Dataset from '{DATASET_PATH}'...")
     with open(DATASET_PATH, "r") as f:
         data = json.load(f)
 
-    # Format training prompts
+    response_template = "<|start_header_id|>assistant<|end_header_id|>\n\n"
     formatted_prompts = []
-    for item in data[:5000]:  # Train on 5,000 steps for fast iteration on RTX 4070 Ti
-        p = f"<|start_header_id|>system<|end_header_id|>\n\nYou are an AI assistant equipped with BSM-RLI micro-kernels.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{item['instruction']}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n{item['response']}<|eot_id|>"
+    for item in data[:5000]:
+        p = f"<|start_header_id|>system<|end_header_id|>\n\nYou are an AI assistant equipped with BSM-RLI micro-kernels.<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{item['instruction']}<|eot_id|>{response_template}{item['response']}<|eot_id|>"
         formatted_prompts.append({"text": p})
 
     dataset = Dataset.from_list(formatted_prompts)
+    collator = CoTCompletionDataCollator(tokenizer, response_template)
 
-    # Anti-Overfitting Safeguard 3: Early Stopping & Loss Regularization
-    print("[4/4] Starting Unsloth SFT Fine-Tuning with Early Stopping & Regularization...")
+    print("[4/4] Starting Unsloth SFT Fine-Tuning with DataCollator Loss Masking...")
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
+        data_collator=collator,
         dataset_text_field="text",
         max_seq_length=512,
         args=SFTConfig(
             per_device_train_batch_size=4,
             gradient_accumulation_steps=4,
             warmup_steps=10,
-            max_steps=150,  # Optimal training steps preventing over-fitting
+            max_steps=150,
             learning_rate=2e-4,
-            weight_decay=0.01,  # Weight decay regularization
+            weight_decay=0.01,
             fp16=True,
             bf16=False,
             logging_steps=10,

@@ -1,18 +1,19 @@
 """
-BSM-RLI Fine-Tuning + Evaluation Sweep (Batched Inference)
+BSM-RLI Fine-Tuning + Evaluation Sweep (Batched Inference & CoT Loss Masking)
 For each model in the catalog:
-  1. Load the model
-  2. Fine-tune with BSM-RLI enhanced curriculum (150 steps, anti-overfitting safeguards)
-  3. Evaluate on the same fixed 50-item benchmark with batched inference
+  1. Load the model via Unsloth
+  2. Fine-tune with BSM-RLI curriculum using completion loss-masking
+     - Standard models target direct triggers
+     - Reasoning models (Qwen3, DeepSeek-R1) target <think> traces + triggers
+  3. Evaluate on fixed 50-item benchmark with batched inference & adaptive token budgets
   4. Save LoRA weights to models/finetuned/<model_key>/
 
-Batch sizes scale inversely with model VRAM (same strategy as baseline_sweep.py).
-Skips models with VRAM > 9GB (training overhead) or already evaluated.
-Saves results to benchmarks/results/finetuned_sweep.json (checkpoint-safe).
+Checkpoint-safe: saves results to benchmarks/results/finetuned_sweep.json
 """
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
@@ -23,8 +24,6 @@ import gc
 from datasets import Dataset, load_dataset
 from unsloth import FastLanguageModel
 from trl import SFTTrainer, SFTConfig
-from peft import PeftModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from models.multi_model_catalog import MODELS_BY_VRAM
 from benchmarks.baseline_sweep import get_batch_size
 
@@ -32,8 +31,76 @@ CURRICULUM_PATH = "dataset/bsm_rli_curriculum_75k.json"
 RESULTS_PATH = "benchmarks/results/finetuned_sweep.json"
 LORA_OUTPUT_ROOT = "models/finetuned"
 
-# Models that are tight for training overhead even at 4-bit — skip fine-tuning
 SKIP_FINETUNE_VRAM_THRESHOLD = 9.0  # GB
+
+SKIP_MODEL_KEYS = {
+    "phi-4-mini-4bit",
+    "gemma-4-e4b-4bit",
+    "ministral-3-8b-4bit",
+}
+
+
+class CoTCompletionDataCollator:
+    """Masks input prompt tokens with -100 so loss applies strictly to assistant responses."""
+
+    def __init__(self, tokenizer, response_template):
+        self.tokenizer = tokenizer
+        self.response_template_ids = tokenizer.encode(
+            response_template, add_special_tokens=False
+        )
+        self.pad_token_id = (
+            tokenizer.pad_token_id
+            if tokenizer.pad_token_id is not None
+            else tokenizer.eos_token_id
+        )
+
+    def __call__(self, examples):
+        batch_input_ids = [
+            torch.tensor(e["input_ids"])
+            if isinstance(e["input_ids"], list)
+            else e["input_ids"]
+            for e in examples
+        ]
+        padded = torch.nn.utils.rnn.pad_sequence(
+            batch_input_ids, batch_first=True, padding_value=self.pad_token_id
+        )
+        attention_mask = (padded != self.pad_token_id).long()
+        labels = padded.clone()
+
+        for i, ids in enumerate(batch_input_ids):
+            ids_list = ids.tolist()
+            match_idx = -1
+            for k in range(len(ids_list) - len(self.response_template_ids) + 1):
+                if (
+                    ids_list[k : k + len(self.response_template_ids)]
+                    == self.response_template_ids
+                ):
+                    match_idx = k + len(self.response_template_ids)
+                    break
+            if match_idx != -1:
+                labels[i, :match_idx] = -100
+            else:
+                labels[i, : len(ids_list) // 2] = -100
+            labels[i, padded[i] == self.pad_token_id] = -100
+
+        return {
+            "input_ids": padded,
+            "attention_mask": attention_mask,
+            "labels": labels,
+        }
+
+
+def get_response_template(chat_template):
+    if chat_template == "gemma":
+        return "<start_of_turn>model\n"
+    elif chat_template == "llama3":
+        return "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    elif chat_template == "mistral":
+        return "[/INST]"
+    elif chat_template == "phi4":
+        return "<|assistant|>\n"
+    else:
+        return "<|im_start|>assistant\n"
 
 
 def build_eval_set(n=50):
@@ -78,29 +145,42 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
     model = FastLanguageModel.get_peft_model(
         model,
         r=16,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj"],
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
         lora_alpha=16,
         lora_dropout=0.0,
         bias="none",
         use_gradient_checkpointing="unsloth",
     )
 
-    # Format curriculum using this model's prompt template
+    is_thinking = config["family"] in {"deepseek-r1", "qwen3"}
+    resp_template = get_response_template(config.get("chat_template", "chatml"))
+
     formatted = []
     for item in curriculum_data[:4500]:
-        text = (
-            config["prompt_format"].format(prompt=item["instruction"])
-            + item["response"]
+        resp = (
+            item.get("cot_response")
+            if is_thinking and "cot_response" in item
+            else item["response"]
         )
+        text = config["prompt_format"].format(prompt=item["instruction"]) + resp
         formatted.append({"text": text})
 
     dataset = Dataset.from_list(formatted)
+    collator = CoTCompletionDataCollator(tokenizer, resp_template)
 
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
         train_dataset=dataset,
+        data_collator=collator,
         dataset_text_field="text",
         max_seq_length=512,
         args=SFTConfig(
@@ -119,7 +199,7 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
         ),
     )
 
-    print(f"  [Fine-tune] Training 150 steps...")
+    print("  [Fine-tune] Training 150 steps with CoT completion loss masking...")
     trainer.train()
 
     model.save_pretrained(lora_out)
@@ -127,23 +207,29 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
     print(f"  [Fine-tune] LoRA weights saved to {lora_out}")
 
     # ── Evaluate the fine-tuned model (batched) ──────────────────
-    is_thinking = config["family"] in {"deepseek-r1", "qwen3"}
     batch_size = get_batch_size(config["vram_gb"], is_thinking)
-    max_new_tokens = 512 if is_thinking else 256
-    print(f"  [Eval] Batched evaluation (batch={batch_size}, budget={max_new_tokens})...")
+    max_new_tokens = 1024 if is_thinking else 256
+    print(
+        f"  [Eval] Batched evaluation (batch={batch_size}, budget={max_new_tokens})..."
+    )
 
     correct = 0
     total_tokens = 0
     t0 = time.time()
-    prompts = [config["prompt_format"].format(prompt=item["question"]) for item in eval_set]
+    prompts = [
+        config["prompt_format"].format(prompt=item["question"]) for item in eval_set
+    ]
 
     for i in range(0, len(prompts), batch_size):
-        batch_prompts = prompts[i:i + batch_size]
-        batch_expected = [item["expected"] for item in eval_set[i:i + batch_size]]
+        batch_prompts = prompts[i : i + batch_size]
+        batch_expected = [item["expected"] for item in eval_set[i : i + batch_size]]
 
         encoding = tokenizer(
-            batch_prompts, return_tensors="pt", padding=True,
-            truncation=True, max_length=768
+            batch_prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=768,
         ).to("cuda")
 
         with torch.no_grad():
@@ -172,7 +258,7 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
         "family": config["family"],
         "parameters": config["parameters"],
         "vram_gb": config["vram_gb"],
-        "stage": "finetuned_150steps",
+        "stage": "finetuned_cot_preserving_150steps",
         "accuracy_pct": accuracy,
         "correct": correct,
         "total": len(eval_set),
@@ -197,8 +283,8 @@ def run_finetuning_sweep():
         results = {}
 
     print("=================================================================")
-    print(f"  BSM-RLI FINE-TUNING SWEEP — {len(MODELS_BY_VRAM)} MODELS")
-    print(f"  150-Step Unsloth QLoRA | Anti-Overfitting Safeguards Active")
+    print("  BSM-RLI CoT-PRESERVING FINE-TUNING SWEEP — 21 MODELS           ")
+    print("  150-Step Unsloth QLoRA | Completion Loss Masking Active         ")
     print("=================================================================\n")
 
     with open(CURRICULUM_PATH) as f:
@@ -208,12 +294,18 @@ def run_finetuning_sweep():
     eval_set = build_eval_set(50)
 
     for model_key, config in MODELS_BY_VRAM:
-        if model_key in results:
-            print(f"[Skip] {model_key} — already evaluated.")
+        if model_key in SKIP_MODEL_KEYS:
+            print(f"[Skip] {model_key} — known unsupported/crash risk.")
+            continue
+
+        if model_key in results and results[model_key].get("stage") == "finetuned_cot_preserving_150steps":
+            print(f"[Skip] {model_key} — already evaluated with CoT-preserving SFT.")
             continue
 
         if config["vram_gb"] > SKIP_FINETUNE_VRAM_THRESHOLD:
-            print(f"[Skip] {model_key} — VRAM {config['vram_gb']}GB exceeds training threshold ({SKIP_FINETUNE_VRAM_THRESHOLD}GB).")
+            print(
+                f"[Skip] {model_key} — VRAM {config['vram_gb']}GB exceeds training threshold ({SKIP_FINETUNE_VRAM_THRESHOLD}GB)."
+            )
             results[model_key] = {
                 "model_name": config["model_name"],
                 "parameters": config["parameters"],
@@ -225,20 +317,24 @@ def run_finetuning_sweep():
                 json.dump(results, f, indent=2)
             continue
 
-        print(f"\n[Model {model_key}] {config['parameters']} | ~{config['vram_gb']} GB VRAM")
+        print(
+            f"\n[Model {model_key}] {config['parameters']} | ~{config['vram_gb']} GB VRAM"
+        )
 
         try:
             result = finetune_and_eval(model_key, config, eval_set, curriculum_data)
             results[model_key] = result
-            print(f"  --> Fine-tuned Accuracy: {result['accuracy_pct']}% | "
-                  f"Avg tokens: {result['avg_tokens_per_sample']} | "
-                  f"Time: {result['total_eval_seconds']}s")
+            print(
+                f"  --> Fine-tuned Accuracy: {result['accuracy_pct']}% | "
+                f"Avg tokens: {result['avg_tokens_per_sample']} | "
+                f"Time: {result['total_eval_seconds']}s"
+            )
 
         except Exception as e:
             print(f"  [Error] {model_key}: {e}")
             results[model_key] = {
                 "model_name": config["model_name"],
-                "stage": "finetuned_150steps",
+                "stage": "finetuned_cot_preserving_150steps",
                 "error": str(e),
                 "accuracy_pct": None,
             }
@@ -259,7 +355,9 @@ def run_finetuning_sweep():
     print("-" * 75)
     for key, r in results.items():
         if r.get("accuracy_pct") is not None:
-            print(f"{key:<35} {r['parameters']:<12} {r['accuracy_pct']:<14} {r.get('avg_tokens_per_sample', '—')}")
+            print(
+                f"{key:<35} {r['parameters']:<12} {r['accuracy_pct']:<14} {r.get('avg_tokens_per_sample', '—')}"
+            )
 
     return results
 

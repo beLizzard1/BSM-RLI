@@ -1,0 +1,84 @@
+{
+  "smollm2-135m-4bit": {
+    "model_name": "unsloth/SmolLM2-135M-Instruct-bnb-4bit",
+    "stage": "finetuned_cot_preserving_150steps",
+    "error": "'text'",
+    "accuracy_pct": null
+  },
+  "smollm2-360m-4bit": {
+    "model_name": "unsloth/SmolLM2-360M-Instruct-bnb-4bit",
+    "stage": "finetuned_cot_preserving_150steps",
+    "error": "'text'",
+    "accuracy_pct": null
+  },
+  "qwen-2.5-0.5b-4bit": {
+    "model_name": "unsloth/Qwen2.5-0.5B-Instruct-bnb-4bit",
+    "stage": "finetuned_cot_preserving_150steps",
+    "error": "'text'",
+    "accuracy_pct": null
+  },
+  "qwen3-0.6b-4bit": {
+    "model_name": "unsloth/Qwen3-0.6B-bnb-4bit",
+    "family": "qwen3",
+    "parameters": "0.60B",
+    "vram_gb": 0.8,
+    "stage": "finetuned_cot_preserving_150steps",
+    "accuracy_pct": 32.0,
+    "correct": 16,
+    "total": 50,
+    "avg_tokens_per_sample": 987.6,
+    "token_budget_used": 1024,
+    "batch_size": 16,
+    "throughput_samples_per_sec": 0.31,
+    "total_eval_seconds": 162.84,
+    "lora_weights": "models/finetuned/qwen3-0.6b-4bit"
+  },
+  "llama-3.2-1b-4bit": {
+    "model_name": "unsloth/Llama-3.2-1B-Instruct-bnb-4bit",
+    "family": "llama3",
+    "parameters": "1.23B",
+    "vram_gb": 1.2,
+    "stage": "finetuned_cot_preserving_150steps",
+    "accuracy_pct": 24.0,
+    "correct": 12,
+    "total": 50,
+    "avg_tokens_per_sample": 248.0,
+    "token_budget_used": 256,
+    "batch_size": 16,
+    "throughput_samples_per_sec": 1.44,
+    "total_eval_seconds": 34.83,
+    "lora_weights": "models/finetuned/llama-3.2-1b-4bit"
+  },
+  "qwen3-1.7b-4bit": {
+    "model_name": "unsloth/Qwen3-1.7B-bnb-4bit",
+    "family": "qwen3",
+    "parameters": "1.70B",
+    "vram_gb": 1.4,
+    "stage": "finetuned_cot_preserving_150steps",
+    "accuracy_pct": 24.0,
+    "correct": 12,
+    "total": 50,
+    "avg_tokens_per_sample": 561.6,
+    "token_budget_used": 1024,
+    "batch_size": 8,
+    "throughput_samples_per_sec": 0.28,
+    "total_eval_seconds": 181.44,
+    "lora_weights": "models/finetuned/qwen3-1.7b-4bit"
+  },
+  "smollm2-1.7b-4bit": {
+    "model_name": "unsloth/SmolLM2-1.7B-Instruct-bnb-4bit",
+    "family": "smollm2",
+    "parameters": "1.71B",
+    "vram_gb": 1.4,
+    "stage": "finetuned_cot_preserving_150steps",
+    "accuracy_pct": 46.0,
+    "correct": 23,
+    "total": 50,
+    "avg_tokens_per_sample": 216.7,
+    "token_budget_used": 256,
+    "batch_size": 16,
+    "throughput_samples_per_sec": 1.69,
+    "total_eval_seconds": 29.62,
+    "lora_weights": "models/finetuned/smollm2-1.7b-4bit"
+  }
+}

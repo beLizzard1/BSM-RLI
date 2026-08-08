@@ -164,7 +164,9 @@ def run_baseline_sweep():
             tokenizer = AutoTokenizer.from_pretrained(
                 config["model_name"], padding_side="left", trust_remote_code=True
             )
-            tokenizer.add_special_tokens({"additional_special_tokens": ["<|jit_start|>", "<|jit_end|>"]})
+            tokenizer.add_special_tokens(
+                {"additional_special_tokens": ["<|jit_start|>", "<|jit_end|>"]}
+            )
             if tokenizer.pad_token is None:
                 tokenizer.pad_token = tokenizer.eos_token
 
@@ -271,9 +273,7 @@ def run_baseline_sweep():
             avg_tok = r.get("avg_tokens_per_sample", 0) or 0
             budget = r.get("token_budget_used", 0) or 0
             saturated = (
-                "⚠"
-                if (avg_tok and budget and avg_tok >= budget * 0.92)
-                else " "
+                "⚠" if (avg_tok and budget and avg_tok >= budget * 0.92) else " "
             )
             print(
                 f"{key:<35} {r.get('parameters', '—'):<10} "

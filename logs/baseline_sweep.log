@@ -1,0 +1,59 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+[Resume] Found existing results for 16 models.
+=================================================================
+  BSM-RLI BASELINE SWEEP — 20 MODELS (BATCHED)
+  Token budgets: [256, 512, 1024, 2048] | Batch size: adaptive by VRAM
+=================================================================
+
+[Skip] smollm2-135m-4bit — already evaluated.
+[Skip] smollm2-360m-4bit — already evaluated.
+[Skip] qwen-2.5-0.5b-4bit — already evaluated.
+[Skip] qwen3-0.6b-4bit — already evaluated.
+[Skip] llama-3.2-1b-4bit — already evaluated.
+[Skip] qwen3-1.7b-4bit — already evaluated.
+[Skip] smollm2-1.7b-4bit — already evaluated.
+[Skip] deepseek-r1-qwen-1.5b-4bit — already evaluated.
+[Skip] gemma-2-2b-4bit — already evaluated.
+
+[Evaluating] gemma-4-e2b-4bit
+  Model    : unsloth/gemma-4-E2B-it-unsloth-bnb-4bit
+  Params   : 2.0B (MoE) | VRAM: ~2.0 GB
+  Batch    : 16 | Thinking: No
+Fetching 3 files:   0%|          | 0/3 [00:00<?, ?it/s]Fetching 3 files:  33%|███▎      | 1/3 [00:42<01:24, 42.16s/it]Fetching 3 files:  67%|██████▋   | 2/3 [01:00<00:28, 28.02s/it]Fetching 3 files: 100%|██████████| 3/3 [01:03<00:00, 16.55s/it]Fetching 3 files: 100%|██████████| 3/3 [01:03<00:00, 21.06s/it]
+Loading weights:   0%|          | 0/2011 [00:00<?, ?it/s]Loading weights:   9%|▉         | 183/2011 [00:00<00:01, 1820.14it/s]Loading weights:  19%|█▉        | 392/2011 [00:00<00:00, 1972.08it/s]Loading weights:  29%|██▉       | 590/2011 [00:00<00:00, 1882.32it/s]Loading weights:  29%|██▉       | 590/2011 [00:05<00:00, 1882.32it/s]Loading weights:  39%|███▊      | 775/2011 [00:05<00:14, 84.05it/s]  Loading weights:  56%|█████▌    | 1130/2011 [00:06<00:05, 167.14it/s]Loading weights: 100%|██████████| 2011/2011 [00:06<00:00, 328.04it/s]
+The new embeddings will be initialized from a multivariate normal distribution that has old embeddings' mean and covariance. As described in this article: https://nlp.stanford.edu/~johnhew/vocab-expansion.html. To disable this, use `mean_resizing=False`
+  [Budget=256, Batch=16] Running... The following generation flags are not valid and may be ignored: ['top_p', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+/home/liz/miniforge3/lib/python3.12/site-packages/unsloth/__init__.py:1454: UserWarning: WARNING: Unsloth should be imported before [transformers] to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from ._gpu_init import *
+This model config has set a `rope_parameters['original_max_position_embeddings']` field, to be used together with `max_position_embeddings` to determine a scaling factor. Please set the `factor` field of `rope_parameters`with this ratio instead -- we recommend the use of this field over `original_max_position_embeddings`, as it is compatible with most model architectures.
+1/50 correct | avg 256.0 tokens | 0.84 samples/s
+  ✓ Budget 256 sufficient
+  ✅ 2.0% | budget=256 | throughput=0.84 samples/s | 59.8s
+[Skip] llama-3.2-3b-4bit — already evaluated.
+[Skip] qwen3-4b-4bit — already evaluated.
+
+[Evaluating] phi-4-mini-4bit
+  Model    : unsloth/Phi-4-mini-instruct-bnb-4bit
+  Params   : 3.84B | VRAM: ~2.9 GB
+  Batch    : 8 | Thinking: No
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+  [Loader] Using Unsloth FastLanguageModel for Phi-4
+Unsloth: WARNING `trust_remote_code` is True.
+Are you certain you want to do remote code execution?
+==((====))==  Unsloth 2026.8.8: Fast Phi3 patching. Transformers: 5.5.0.
+   \\   /|    NVIDIA GeForce RTX 4070 Ti. Num GPUs = 1. Max memory: 11.994 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.11.0+cu130. CUDA: 8.9. CUDA Toolkit: 13.0. Triton: 3.6.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.35. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+  [Error] phi-4-mini-4bit: cannot import name 'SlidingWindowCache' from 'transformers.cache_utils' (/home/liz/miniforge3/lib/python3.12/site-packages/transformers/cache_utils.py)
+
+[Evaluating] gemma-4-e4b-4bit
+  Model    : unsloth/gemma-4-E4B-it-unsloth-bnb-4bit
+  Params   : 4.0B (MoE) | VRAM: ~3.8 GB
+  Batch    : 8 | Thinking: No
+Fetching 3 files:   0%|          | 0/3 [00:00<?, ?it/s]Fetching 3 files:  33%|███▎      | 1/3 [00:31<01:02, 31.48s/it]Fetching 3 files:  67%|██████▋   | 2/3 [01:21<00:42, 42.49s/it]
