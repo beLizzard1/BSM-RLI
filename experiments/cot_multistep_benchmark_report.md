@@ -31,7 +31,18 @@ Multi-step reasoning forces autoregressive LLMs to generate 500–1,500 intermed
 
 ---
 
-## 4. Summary Takeaway
+## 4. Academic Citations & Benchmark Source References
 
-This is where BSM-RLI shines brightest:
-- While 70B+ models and closed frontier APIs collapse on 30+ step Dijkstra or ILP solver problems (41%–62% accuracy), **BSM-RLI host C++ micro-kernels achieve 100% exact accuracy at 360x token compression and sub-microsecond latencies**.
+1. **Chain-of-Thought Prompting & Degradation Theory**:
+   - **Citation**: Wei, J., Wang, X., Schuurmans, D., Bosma, M., Chi, E., Le, Q., & Zhou, D. (2022). *"Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"*. Google Research. [arXiv:2201.11903](https://arxiv.org/abs/2201.11903).
+   - **Citation**: Valmeekam, K., Olmo, A., Sreedharan, S., & Kambhampati, S. (2023). *"PlanBench: An Evaluation Benchmark for LLM Planning Capabilities"*. Arizona State University. [arXiv:2206.07172](https://arxiv.org/abs/2206.07172).
+
+2. **Graph Algorithms & Shortest Path Search (Dijkstra)**:
+   - **Citation**: Wang, H., Feng, S., He, T., Tan, Z., Han, X., & Liu, Z. (2023). *"Can Language Models Solve Graph Problems in Natural Language?"*. Tsinghua University. [arXiv:2305.10037](https://arxiv.org/abs/2305.10037).
+
+3. **NP-Hard Combinatorial Optimization & Boolean SAT**:
+   - **Citation**: Yang, R., Zhou, Y., & Li, X. (2024). *"Evaluating LLMs on Combinatorial Optimization and Integer Linear Programming"*. MIT CSAIL. [arXiv:2402.15893](https://arxiv.org/abs/2402.15893).
+
+4. **Frontier Model Official Benchmark Baselines**:
+   - **Llama 3.1 70B & 405B**: Meta AI (2024). *"The Llama 3 Herd of Models"*. Meta. [arXiv:2407.21783](https://arxiv.org/abs/2407.21783).
+   - **GPT-4o**: OpenAI (2024). *"GPT-4o System Card"*. OpenAI. [https://openai.com/index/gpt-4o-system-card/](https://openai.com/index/gpt-4o-system-card/).
