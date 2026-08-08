@@ -1,0 +1,9 @@
+{
+  "model": "unsloth/Llama-3.2-1B-Instruct",
+  "adapter": "None (Pure Base Model)",
+  "num_samples": 50,
+  "correct": 16,
+  "accuracy_percent": 32.0,
+  "avg_output_tokens": 126.14,
+  "elapsed_seconds": 68.93224692344666
+}
