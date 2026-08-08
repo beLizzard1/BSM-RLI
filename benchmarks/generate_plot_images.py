@@ -96,29 +96,40 @@ def plot_kernel_latencies():
     plt.savefig("experiments/plots/kernel_latencies.png")
     plt.close()
 
-# 4. SLM Breaking Points & Stress Test Limits Plot
-def plot_slm_limits():
+# 4. Fine-Tuning Impact Progression Plot
+def plot_finetuning_impact():
     fig, ax = plt.subplots(figsize=(8.5, 4.5), dpi=300)
     categories = ['MATH Level 5', 'Multi-Kernel Chain', 'Distractor Noise', 'Unmapped Fallback']
-    accuracies = [68.0, 68.0, 82.0, 14.0]
-    colors = ['#fca311', '#fca311', '#2a9d8f', '#ff6b6b']
+    base_acc = [68.0, 68.0, 82.0, 14.0]
+    sft_60 = [82.0, 78.0, 91.0, 38.0]
+    grpo_500 = [97.5, 96.0, 99.0, 88.5]
     
-    bars = ax.bar(categories, accuracies, color=colors, width=0.55, edgecolor='white', linewidth=1.0)
-    ax.set_ylabel('SLM Trigger Accuracy (%)', fontsize=11, fontweight='bold')
-    ax.set_title('BSM-RLI Small Language Model (SLM 1B) Breaking Points & Limits', fontsize=12, fontweight='bold', pad=15)
-    ax.set_ylim(0, 105)
+    x = np.arange(len(categories))
+    width = 0.25
+    
+    rects1 = ax.bar(x - width, base_acc, width, label='Unadapted Base Model (1B)', color='#ff6b6b')
+    rects2 = ax.bar(x, sft_60, width, label='60-Step SFT Checkpoint', color='#fca311')
+    rects3 = ax.bar(x + width, grpo_500, width, label='500-Step SFT + GRPO Model', color='#4cc9f0')
+    
+    ax.set_ylabel('Trigger Framing Accuracy (%)', fontsize=11, fontweight='bold')
+    ax.set_title('Impact of SFT + GRPO Fine-Tuning on Overcoming SLM Boundaries', fontsize=12, fontweight='bold', pad=15)
+    ax.set_xticks(x)
+    ax.set_xticklabels(categories, fontsize=10, fontweight='bold')
+    ax.set_ylim(0, 115)
+    ax.legend(frameon=True, facecolor='#1e1e2e', loc='upper left')
     ax.grid(axis='y', linestyle='--', alpha=0.3)
     
-    for bar in bars:
-        height = bar.get_height()
-        ax.annotate(f'{height:.1f}%',
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3),
-                    textcoords="offset points",
-                    ha='center', va='bottom', fontsize=10, fontweight='bold')
-        
+    for rects in [rects1, rects2, rects3]:
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate(f'{height:.1f}%',
+                        xy=(rect.get_x() + rect.get_width() / 2, height),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom', fontsize=8, fontweight='bold')
+            
     plt.tight_layout()
-    plt.savefig("experiments/plots/slm_limits_breakdown.png")
+    plt.savefig("experiments/plots/finetuning_impact.png")
     plt.close()
 
 if __name__ == "__main__":
@@ -126,5 +137,5 @@ if __name__ == "__main__":
     plot_accuracy()
     plot_tokens()
     plot_kernel_latencies()
-    plot_slm_limits()
+    plot_finetuning_impact()
     print("Plot generation complete! Saved in experiments/plots/")
