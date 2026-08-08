@@ -13,12 +13,11 @@ Covers:
 """
 
 EDGE_MODEL_CATALOG = {
-
     # ─────────────────────────────────────────────────────────────
     # GOOGLE GEMMA 4 (April 2026) — SentencePiece, multimodal
     # ─────────────────────────────────────────────────────────────
     "gemma-4-e2b-4bit": {
-        "model_name": "unsloth/gemma-4-E2B-it-bnb-4bit",
+        "model_name": "unsloth/gemma-4-E2B-it-unsloth-bnb-4bit",
         "family": "gemma4",
         "parameters": "2.0B (MoE)",
         "vram_gb": 2.0,
@@ -28,7 +27,7 @@ EDGE_MODEL_CATALOG = {
         "notes": "Google Gemma 4 E2B MoE — 2B active params, vision-capable",
     },
     "gemma-4-e4b-4bit": {
-        "model_name": "unsloth/gemma-4-E4B-it-bnb-4bit",
+        "model_name": "unsloth/gemma-4-E4B-it-unsloth-bnb-4bit",
         "family": "gemma4",
         "parameters": "4.0B (MoE)",
         "vram_gb": 3.8,
@@ -36,16 +35,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": True,
         "prompt_format": "<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n",
         "notes": "Google Gemma 4 E4B MoE — 4B active params, vision-capable",
-    },
-    "gemma-4-12b-4bit": {
-        "model_name": "unsloth/gemma-4-12B-it-bnb-4bit",
-        "family": "gemma4",
-        "parameters": "12.0B",
-        "vram_gb": 8.0,
-        "chat_template": "gemma",
-        "multimodal": True,
-        "prompt_format": "<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n",
-        "notes": "Google Gemma 4 12B dense — fits 12GB VRAM at 4-bit",
     },
     # Gemma 2 (stable prior gen)
     "gemma-2-2b-4bit": {
@@ -66,7 +55,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": False,
         "prompt_format": "<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n",
     },
-
     # ─────────────────────────────────────────────────────────────
     # ALIBABA QWEN 3 (Q2 2025) — ChatML template
     # ─────────────────────────────────────────────────────────────
@@ -126,7 +114,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": False,
         "prompt_format": "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n",
     },
-
     # ─────────────────────────────────────────────────────────────
     # META LLAMA 3.2 & 3.3 — Llama3 header template
     # ─────────────────────────────────────────────────────────────
@@ -148,7 +135,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": False,
         "prompt_format": "<|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n",
     },
-
     # ─────────────────────────────────────────────────────────────
     # DEEPSEEK-R1 DISTILL FAMILY
     # ─────────────────────────────────────────────────────────────
@@ -180,7 +166,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": False,
         "prompt_format": "<|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n<think>\n</think>\n",
     },
-
     # ─────────────────────────────────────────────────────────────
     # HUGGING FACE SMOLLM2 (Ultra-Lightweight MCU-Grade)
     # ─────────────────────────────────────────────────────────────
@@ -212,7 +197,6 @@ EDGE_MODEL_CATALOG = {
         "multimodal": False,
         "prompt_format": "<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n",
     },
-
     # ─────────────────────────────────────────────────────────────
     # MICROSOFT PHI-4 MINI & PHI-4
     # ─────────────────────────────────────────────────────────────
@@ -226,14 +210,13 @@ EDGE_MODEL_CATALOG = {
         "prompt_format": "<|user|>\n{prompt}<|end|>\n<|assistant|>\n",
         "notes": "Phi-4 Mini — strong math & reasoning for size",
     },
-
     # ─────────────────────────────────────────────────────────────
     # MISTRAL / MINISTRAL
     # ─────────────────────────────────────────────────────────────
-    "ministral-8b-4bit": {
-        "model_name": "unsloth/Ministral-8B-Instruct-2410-bnb-4bit",
+    "ministral-3-8b-4bit": {
+        "model_name": "unsloth/Ministral-3-8B-Instruct-2512-unsloth-bnb-4bit",
         "family": "mistral",
-        "parameters": "8.02B",
+        "parameters": "8.0B",
         "vram_gb": 5.1,
         "chat_template": "mistral",
         "multimodal": False,
@@ -242,20 +225,24 @@ EDGE_MODEL_CATALOG = {
 }
 
 # VRAM budget sorted listing
-MODELS_BY_VRAM = sorted(
-    EDGE_MODEL_CATALOG.items(),
-    key=lambda x: x[1]["vram_gb"]
-)
+MODELS_BY_VRAM = sorted(EDGE_MODEL_CATALOG.items(), key=lambda x: x[1]["vram_gb"])
+
 
 def get_model_config(key):
     return EDGE_MODEL_CATALOG.get(key, EDGE_MODEL_CATALOG["llama-3.2-1b-4bit"])
 
+
 def list_catalog():
-    print(f"\n{'Model Key':<35} {'Family':<12} {'Params':<12} {'VRAM (GB)':<12} {'Multimodal'}")
+    print(
+        f"\n{'Model Key':<35} {'Family':<12} {'Params':<12} {'VRAM (GB)':<12} {'Multimodal'}"
+    )
     print("-" * 90)
     for key, cfg in MODELS_BY_VRAM:
         mm = "✅" if cfg.get("multimodal") else "—"
-        print(f"{key:<35} {cfg['family']:<12} {cfg['parameters']:<12} {cfg['vram_gb']:<12} {mm}")
+        print(
+            f"{key:<35} {cfg['family']:<12} {cfg['parameters']:<12} {cfg['vram_gb']:<12} {mm}"
+        )
+
 
 if __name__ == "__main__":
     list_catalog()
