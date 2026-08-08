@@ -1,11 +1,12 @@
 """
-BSM-RLI Fine-Tuning + Evaluation Sweep
+BSM-RLI Fine-Tuning + Evaluation Sweep (Batched Inference)
 For each model in the catalog:
   1. Load the model
   2. Fine-tune with BSM-RLI enhanced curriculum (150 steps, anti-overfitting safeguards)
-  3. Evaluate on the same fixed 50-item benchmark
+  3. Evaluate on the same fixed 50-item benchmark with batched inference
   4. Save LoRA weights to models/finetuned/<model_key>/
 
+Batch sizes scale inversely with model VRAM (same strategy as baseline_sweep.py).
 Skips models with VRAM > 9GB (training overhead) or already evaluated.
 Saves results to benchmarks/results/finetuned_sweep.json (checkpoint-safe).
 """
@@ -25,6 +26,7 @@ from trl import SFTTrainer, SFTConfig
 from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from models.multi_model_catalog import MODELS_BY_VRAM
+from benchmarks.baseline_sweep import get_batch_size
 
 CURRICULUM_PATH = "dataset/bsm_rli_curriculum_75k.json"
 RESULTS_PATH = "benchmarks/results/finetuned_sweep.json"
@@ -124,34 +126,46 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
     tokenizer.save_pretrained(lora_out)
     print(f"  [Fine-tune] LoRA weights saved to {lora_out}")
 
-    # ── Evaluate the fine-tuned model ──────────────────────────
-    print(f"  [Eval] Running 50-item benchmark on fine-tuned model...")
+    # ── Evaluate the fine-tuned model (batched) ──────────────────
+    is_thinking = config["family"] in {"deepseek-r1", "qwen3"}
+    batch_size = get_batch_size(config["vram_gb"], is_thinking)
+    max_new_tokens = 512 if is_thinking else 256
+    print(f"  [Eval] Batched evaluation (batch={batch_size}, budget={max_new_tokens})...")
+
     correct = 0
     total_tokens = 0
     t0 = time.time()
+    prompts = [config["prompt_format"].format(prompt=item["question"]) for item in eval_set]
 
-    for item in eval_set:
-        prompt = config["prompt_format"].format(prompt=item["question"])
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512).to("cuda")
+    for i in range(0, len(prompts), batch_size):
+        batch_prompts = prompts[i:i + batch_size]
+        batch_expected = [item["expected"] for item in eval_set[i:i + batch_size]]
+
+        encoding = tokenizer(
+            batch_prompts, return_tensors="pt", padding=True,
+            truncation=True, max_length=768
+        ).to("cuda")
 
         with torch.no_grad():
             outputs = model.generate(
-                **inputs,
-                max_new_tokens=128,
+                **encoding,
+                max_new_tokens=max_new_tokens,
                 do_sample=False,
                 pad_token_id=tokenizer.pad_token_id,
             )
 
-        new_tokens = outputs[0][inputs.input_ids.shape[1]:]
-        total_tokens += len(new_tokens)
-        gen_text = tokenizer.decode(new_tokens, skip_special_tokens=False)
-
-        if check_answer(gen_text, item["expected"]):
-            correct += 1
+        input_len = encoding.input_ids.shape[1]
+        for j, output in enumerate(outputs):
+            new_tokens = output[input_len:]
+            total_tokens += len(new_tokens)
+            gen_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
+            if check_answer(gen_text, batch_expected[j]):
+                correct += 1
 
     elapsed = time.time() - t0
     accuracy = round((correct / len(eval_set)) * 100.0, 2)
     avg_tokens = round(total_tokens / len(eval_set), 1)
+    throughput = round(len(eval_set) / elapsed, 2)
 
     return {
         "model_name": config["model_name"],
@@ -163,6 +177,9 @@ def finetune_and_eval(model_key, config, eval_set, curriculum_data):
         "correct": correct,
         "total": len(eval_set),
         "avg_tokens_per_sample": avg_tokens,
+        "token_budget_used": max_new_tokens,
+        "batch_size": batch_size,
+        "throughput_samples_per_sec": throughput,
         "total_eval_seconds": round(elapsed, 2),
         "lora_weights": lora_out,
     }
