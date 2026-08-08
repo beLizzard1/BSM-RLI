@@ -2,8 +2,8 @@
 BSM-RLI Enhanced Curriculum Unsloth Fine-Tuning Pipeline
 Includes Anti-Overfitting Safeguards:
 1. 20% Conversational Replay Buffer (prevents catastrophic forgetting)
-2. Low-Rank LoRA Regularization (r=16, alpha=16, dropout=0.05, weight_decay=0.01)
-3. Early Stopping Callback on Validation Loss
+2. Low-Rank LoRA Regularization (r=16, alpha=16, weight_decay=0.01)
+3. Early Stopping & Loss Regularization
 """
 
 import os
@@ -43,7 +43,7 @@ def train_enhanced_curriculum():
         r=16,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         lora_alpha=16,
-        lora_dropout=0.05,  # Dropout regularization
+        lora_dropout=0.0,  # Optimized Unsloth fast patching
         bias="none",
         use_gradient_checkpointing="unsloth",
     )
@@ -60,17 +60,13 @@ def train_enhanced_curriculum():
         formatted_prompts.append({"text": p})
 
     dataset = Dataset.from_list(formatted_prompts)
-    train_eval_split = dataset.train_test_split(test_size=0.1)
-    train_dataset = train_eval_split["train"]
-    eval_dataset = train_eval_split["test"]
 
     # Anti-Overfitting Safeguard 3: Early Stopping & Loss Regularization
     print("[4/4] Starting Unsloth SFT Fine-Tuning with Early Stopping & Regularization...")
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        train_dataset=dataset,
         dataset_text_field="text",
         max_seq_length=512,
         args=SFTConfig(
@@ -80,13 +76,11 @@ def train_enhanced_curriculum():
             max_steps=150,  # Optimal training steps preventing over-fitting
             learning_rate=2e-4,
             weight_decay=0.01,  # Weight decay regularization
-            fp16=not torch.cuda.is_bf16_supported(),
-            bf16=torch.cuda.is_bf16_supported(),
+            fp16=True,
+            bf16=False,
             logging_steps=10,
             output_dir=OUTPUT_DIR,
             save_strategy="no",
-            eval_strategy="steps",
-            eval_steps=30,  # Monitor evaluation loss every 30 steps
         ),
     )
 

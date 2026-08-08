@@ -154,6 +154,57 @@ python3 benchmarks/run_baseline_unadapted_eval.py
 
 ---
 
+## Clean Project Directory Architecture
+
+```text
+BSM-RLI/
+├── src/                          <-- C++ Engine & Host Interceptor Source
+│   ├── bsm_rli_engine.cpp
+│   ├── bsm_rli_grammar.cpp
+│   ├── bsm_rli_interceptor.cpp
+│   └── bsm_rli_cli.cpp
+├── include/                      <-- C++ Headers & Public Engine APIs
+│   └── bsm_rli.hpp
+├── kernels/                      <-- C++ & CUDA Micro-Kernel Implementations
+│   ├── gpu_microkernels.cu
+│   ├── gpu_microkernels.py
+│   └── cpu_microkernels.cpp
+├── models/                       <-- Model Adapters & LoRA Weights
+│   ├── gemma_bsm_rli.py          <-- Google Gemma Adapter
+│   └── bsm_rli_lora/             <-- Fine-Tuned LoRA Weights
+├── dataset/                      <-- Synthetic Dataset Generators & JSON Artifacts
+│   ├── generate_synthetic_data.py
+│   ├── generate_enhanced_curriculum.py
+│   ├── bsm_rli_sft_50k.json
+│   └── bsm_rli_curriculum_75k.json
+├── training/                     <-- Fine-Tuning & Quantization Exporters
+│   ├── train_unsloth_sft.py
+│   ├── train_enhanced_curriculum_sft.py
+│   ├── train_unsloth_grpo.py
+│   └── export_gguf.py
+├── benchmarks/                   <-- Live Benchmark Evaluation Suites
+│   ├── run_complete_full_datasets_sweep.py
+│   ├── benchmark_gpu_kernels.py
+│   ├── cot_multistep_benchmarks.py
+│   └── slm_stress_test_limits.py
+├── experiments/                  <-- Research Reports & Visual Plots
+│   ├── plots/                    <-- High-Resolution Visual PNG Charts
+│   ├── full_dataset_benchmark_report.md
+│   ├── delta_success_rate_analysis.md
+│   ├── cot_multistep_benchmark_report.md
+│   ├── slm_limits_stress_test_report.md
+│   ├── fine_tuning_curriculum_impact.md
+│   └── anti_overfitting_strategy.md
+├── tests/                        <-- CTest C++ Unit Tests
+│   └── test_main.cpp
+├── ebnf/                         <-- EBNF Constrained Logit Grammars
+│   └── bsm_rli.gbnf
+├── CMakeLists.txt                <-- CMake Build Configuration
+└── README.md                     <-- Master Project Documentation
+```
+
+---
+
 ## Fine-Tuning Pipeline (Unsloth & GGUF Export)
 
 1. **Synthetic Training Dataset**: 60,000 hybrid instruction-response pairs under [`dataset/bsm_rli_sft_50k.json`](file:///home/liz/Projects/BSM-RLI/dataset/bsm_rli_sft_50k.json).
