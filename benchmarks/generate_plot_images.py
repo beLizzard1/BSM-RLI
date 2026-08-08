@@ -96,41 +96,29 @@ def plot_kernel_latencies():
     plt.savefig("experiments/plots/kernel_latencies.png")
     plt.close()
 
-# 4. Multi-Step CoT & Algorithmic Comparison Plot
-def plot_cot_multistep():
-    fig, ax = plt.subplots(figsize=(9, 4.8), dpi=300)
-    tasks = ['Dijkstra Graph', 'Knapsack ILP', 'Nested Math', 'SAT Puzzle']
+# 4. SLM Breaking Points & Stress Test Limits Plot
+def plot_slm_limits():
+    fig, ax = plt.subplots(figsize=(8.5, 4.5), dpi=300)
+    categories = ['MATH Level 5', 'Multi-Kernel Chain', 'Distractor Noise', 'Unmapped Fallback']
+    accuracies = [68.0, 68.0, 82.0, 14.0]
+    colors = ['#fca311', '#fca311', '#2a9d8f', '#ff6b6b']
     
-    llama_70b = [41.0, 52.0, 76.5, 64.0]
-    gpt4o = [62.5, 71.0, 88.0, 79.0]
-    bsm_rli = [100.0, 100.0, 100.0, 100.0]
-    
-    x = np.arange(len(tasks))
-    width = 0.25
-    
-    rects1 = ax.bar(x - width, llama_70b, width, label='Llama-3.1-70B (CoT)', color='#e76f51')
-    rects2 = ax.bar(x, gpt4o, width, label='GPT-4o (CoT)', color='#f4a261')
-    rects3 = ax.bar(x + width, bsm_rli, width, label='BSM-RLI Engine (1B-8B Edge)', color='#4cc9f0')
-    
-    ax.set_ylabel('Multi-Step Accuracy (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Multi-Step Reasoning Accuracy: CoT Failure vs BSM-RLI Micro-Kernels', fontsize=12, fontweight='bold', pad=15)
-    ax.set_xticks(x)
-    ax.set_xticklabels(tasks, fontsize=11, fontweight='bold')
-    ax.set_ylim(0, 115)
-    ax.legend(frameon=True, facecolor='#1e1e2e', loc='lower right')
+    bars = ax.bar(categories, accuracies, color=colors, width=0.55, edgecolor='white', linewidth=1.0)
+    ax.set_ylabel('SLM Trigger Accuracy (%)', fontsize=11, fontweight='bold')
+    ax.set_title('BSM-RLI Small Language Model (SLM 1B) Breaking Points & Limits', fontsize=12, fontweight='bold', pad=15)
+    ax.set_ylim(0, 105)
     ax.grid(axis='y', linestyle='--', alpha=0.3)
     
-    for rects in [rects1, rects2, rects3]:
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate(f'{height:.1f}%',
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom', fontsize=8, fontweight='bold')
-            
+    for bar in bars:
+        height = bar.get_height()
+        ax.annotate(f'{height:.1f}%',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=10, fontweight='bold')
+        
     plt.tight_layout()
-    plt.savefig("experiments/plots/cot_multistep_comparison.png")
+    plt.savefig("experiments/plots/slm_limits_breakdown.png")
     plt.close()
 
 if __name__ == "__main__":
@@ -138,5 +126,5 @@ if __name__ == "__main__":
     plot_accuracy()
     plot_tokens()
     plot_kernel_latencies()
-    plot_cot_multistep()
+    plot_slm_limits()
     print("Plot generation complete! Saved in experiments/plots/")

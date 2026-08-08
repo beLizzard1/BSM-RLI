@@ -1,0 +1,33 @@
+{
+  "intent_translation_math_level_5": {
+    "description": "MATH Level 5 Competition Problems (Complex word problem to EVAL_EXPR translation)",
+    "total_items": 100,
+    "correct_kernel_triggers": 68,
+    "failed_kernel_triggers": 32,
+    "accuracy_pct": 68.0,
+    "primary_failure_reason": "SLM incorrectly formatted nested algebraic expressions when word problem had > 4 logical clauses."
+  },
+  "multi_kernel_chaining_3plus_steps": {
+    "description": "Sequential Multi-Kernel Chaining (REGEX_EXTRACT -> UNIT_CONVERT -> EVAL_EXPR)",
+    "total_items": 50,
+    "correct_kernel_triggers": 34,
+    "failed_kernel_triggers": 16,
+    "accuracy_pct": 68.0,
+    "primary_failure_reason": "1B model dropped intermediate register variables between kernel step 2 and step 3."
+  },
+  "distractor_context_noise": {
+    "description": "Parameter Extraction with 500-word Irrelevant Distractor Context",
+    "total_items": 50,
+    "correct_kernel_triggers": 41,
+    "failed_kernel_triggers": 9,
+    "accuracy_pct": 82.0,
+    "primary_failure_reason": "Distractor numbers injected into micro-kernel arguments instead of target query numbers."
+  },
+  "out_of_domain_unsupported_kernels": {
+    "description": "Queries requiring unsupported domain kernels (e.g. Fluid Dynamics / Quantum Sim)",
+    "total_items": 50,
+    "fallback_to_cot": 50,
+    "cot_correctness_pct": 14.0,
+    "primary_failure_reason": "SLM fell back to autoregressive CoT, exhibiting standard 1B model parameter capacity limits."
+  }
+}
