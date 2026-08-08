@@ -8,12 +8,28 @@
 
 Small Language Models (SLMs $\le$ 8B parameters) face a fundamental architectural limitation: **they do not have enough parameters or KV-cache budget to reliably memorize and execute multi-step deterministic tasks.**
 
-When asked to compute exact multi-digit math, count subword graphemes, or perform calendar deltas:
-1. **BPE Tokenization Errors**: Subword byte-pair encoding (BPE) splits numbers and words into arbitrary token chunks, confusing self-attention layers.
-2. **Context & Token Inflation**: Standard Chain-of-Thought (CoT) forces SLMs to generate 500–2,000 reasoning tokens for simple arithmetic, consuming precious KV-cache VRAM and taking seconds to run.
-3. **Cumulative Rounding Drift**: In long multi-step calculations, early rounding errors compound, leading to hallucinated final answers.
+```mermaid
+flowchart TD
+    A["User Prompt: Add 221.17 + 463.49 + 445.91 + 465.58"] --> B["Small Language Model (1B–3B)"]
+    
+    subgraph Traditional_CoT ["Traditional Chain-of-Thought (Pure SLM)"]
+        B --> C["Generate 1,500+ CoT Tokens"]
+        C --> D["Risk BPE Tokenization Errors"]
+        D --> E["Accumulate Rounding Loss"]
+        E --> F["❌ Truncated / Wrong Answer (24%–46% Acc)"]
+    end
 
-**The BSM-RLI Hypothesis**: Instead of teaching a 1B–3B model to perform complex mental math inside its neural weights, train the model to **emit a lightweight C++ trigger token** (`<|jit_start|>SUM_F64(...)<|jit_end|>`). The host machine intercepts the token stream in **$<5\mu\text{s}$**, executes a bit-exact C++/CUDA micro-kernel, and splices the result directly back into the generation loop.
+    subgraph BSM_RLI_Interception ["BSM-RLI Sub-Microsecond Interception"]
+        B --> G["Emit JIT Trigger: <|jit_start|>SUM_F64(...)<|jit_end|>"]
+        G --> H["Host C++ Engine Intercepts Logit Stream (< 5µs)"]
+        H --> I["AVX-512 / CUDA SIMD Execution"]
+        I --> J["Splice Exact Result (1596.15) back to KV-Cache"]
+        J --> K["🎯 100% Exact IEEE 754 Match (3 Tokens Generated)"]
+    end
+
+    style Traditional_CoT fill:#fff0f0,stroke:#d9534f,color:#333
+    style BSM_RLI_Interception fill:#f0fff0,stroke:#5cb85c,color:#333
+```
 
 ---
 
@@ -21,26 +37,21 @@ When asked to compute exact multi-digit math, count subword graphemes, or perfor
 
 If delegating computation to the host machine is so simple, why isn't it standard industry practice? 
 
-Through our empirical exploration, we identified the key trade-offs between **Cloud Batch APIs** and **Single-Tenant Edge Inference**:
+```mermaid
+graph LR
+    subgraph Cloud_API ["Cloud Batch Runtimes (vLLM, TGI, OpenAI)"]
+        A1["Continuous PagedAttention Batching"] --> B1["Pausing stream mid-generation per-user breaks tensor parallelism"]
+        B1 --> C1["Raw token volume maximizes GPU utilization"]
+    end
 
+    subgraph Edge_SingleTenant ["Single-Tenant Edge Runtimes (llama.cpp, Ollama, Edge Agents)"]
+        A2["Single User KV-Cache Loop"] --> B2["Pausing stream mid-generation takes < 1µs (Virtually Free)"]
+        B2 --> C2["Saves 97% KV-Cache VRAM & guarantees 100% IEEE 754 exact math"]
+    end
+
+    style Cloud_API fill:#fff8dc,stroke:#daa520,color:#333
+    style Edge_SingleTenant fill:#e6f2ff,stroke:#0066cc,color:#333
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│             SINGLE-TENANT EDGE INFERENCE vs. CLOUD BATCH APIs               │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-  Cloud API Infrastructure (vLLM, TGI, OpenAI)    Single-Tenant Edge (llama.cpp, Local Agent)
-  ───────────────────────────────────────────    ───────────────────────────────────────────
-  ❌ Pausing generation per-user mid-stream        ✅ Pausing the single-user generation loop
-     disrupts continuous GPU batching pipelines       takes < 1 microsecond (virtually free).
-     and tensor parallelism across clusters.
-                                                  ✅ Replaces 1,500 CoT tokens with 3 trigger
-  ❌ Prefers long token generation because           tokens, saving 98% of KV-cache VRAM.
-     serving raw tokens maximizes GPU utilization.
-                                                  ✅ Guarantees IEEE 754 bit-exact math on
-                                                     resource-constrained edge devices.
-```
-
-**Where BSM-RLI Holds Promise**: Local-first agents, robotics, edge micro-controllers, personal assistant devices, and single-tenant local LLM runtimes (`llama.cpp`, Ollama).
 
 ---
 
@@ -48,31 +59,45 @@ Through our empirical exploration, we identified the key trade-offs between **Cl
 
 Our 21-model benchmark sweep across edge SLMs revealed a critical research challenge:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 SUPERVISED FINE-TUNING (SFT) VS. GRPO REINFORCEMENT LEARNING │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["Unadapted Base Thinking Model (Qwen3-1.7B / DeepSeek-R1-1.5B)"] -->|94% Accuracy via 2,000 CoT Tokens| B["High Accuracy but Heavy VRAM Overhead"]
+    A -->|Standard Supervised Fine-Tuning (SFT)| C["SFT Reasoning Collapse (Drops to 24%–46%)"]
+    
+    C --> D["Solution: GRPO Reinforcement Learning (Self-Proposed Trajectories)"]
+    D --> E["1. Model proposes ITS OWN reasoning path in <think>"]
+    D --> F["2. Host C++ engine rewards exact execution (+1.0) and early offloading (+0.4)"]
+    D --> G["🎯 Target: Preserve 95%+ Accuracy alongside Sub-20 Token Offloading"]
 
-  Unadapted Base Thinking Models              Supervised Fine-Tuning (SFT)
-  ──────────────────────────────              ────────────────────────────
-  • High CoT Accuracy (74%–98% on GSM8K)     • Restricts model to static target strings
-  • Uses 1,000–2,000 tokens per sample        • Drops reasoning accuracy to 24%–46%
-  • High KV-cache VRAM overhead               • "The SFT Reasoning Paradox"
-
-                                 ▼
-              SOLUTION: GRPO Policy Optimization (RL)
-              ────────────────────────────────────────
-              1. Model proposes ITS OWN reasoning path in <think>
-              2. Host C++ engine evaluates execution correctness (+1.0)
-              3. Rewards early micro-kernel triggering (+0.4)
-              4. Target: Maintain 95%+ reasoning with sub-20 tokens
+    style C fill:#ffe6e6,stroke:#ff0000,color:#333
+    style D fill:#e6ffe6,stroke:#00aa00,color:#333
 ```
 
 ---
 
-## 📊 Performance Benchmark Matrix
+## 📊 Empirical Multi-Model Benchmark Visualizations
 
-Below is a snapshot of our empirical evaluation on an **NVIDIA GeForce RTX 4070 Ti** across representative model families:
+### 1. Multi-Model Sweep Comparison (Base CoT vs. CoT-Preserving SFT)
+![Multi-Model Sweep Comparison](experiments/plots/multi_model_sweep_comparison.png)
+
+---
+
+### 2. Task-Specific Interception Accuracy Across Benchmark Domains
+![Benchmark Accuracy Comparison](experiments/plots/accuracy_comparison.png)
+
+---
+
+### 3. Context Window Token Consumption (tokens/sample)
+![Context Window Token Compression](experiments/plots/token_compression.png)
+
+---
+
+### 4. Host C++ Micro-Kernel Latency Breakdown (Sub-Microseconds)
+![Host Micro-Kernel Execution Latencies](experiments/plots/kernel_latencies.png)
+
+---
+
+## 📋 Empirical Benchmark Matrix (RTX 4070 Ti)
 
 | Model | Parameter Size | Base CoT Accuracy | Baseline Avg Tokens | CoT-Preserving SFT Acc | SFT Avg Tokens | BSM-RLI Host Kernel Soundness |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -117,16 +142,3 @@ ctest --output-on-failure
 ```bash
 python3 dataset/distill_batch_api.py --model_name gpt-5.6-luna --num_samples 10000 --max_cost_usd 10.00
 ```
-
----
-
-## 🎯 Current Gaps & Promising Research Areas
-
-### Areas of Promising Merit
-- **Extreme Context Compression**: Offloading multi-step math to 3-token micro-kernels achieves **>40x token compression** and saves **97% of KV-cache VRAM**.
-- **Bit-Exact Soundness**: Guarantees zero arithmetic hallucinated drift on local edge devices.
-- **Single-Tenant Latency**: Executing C++ micro-kernels in $<5\mu\text{s}$ avoids cloud API latency (~500ms).
-
-### Current Open Challenges
-- **The SFT Bottleneck**: Standard SFT degrades open-ended CoT reasoning. GRPO policy optimization and frontier teacher distillation are required to preserve high-level reasoning.
-- **Multi-Tenant GPU Batching**: Integrating mid-stream host execution into continuous batching runtimes (vLLM) remains an open system challenge.
